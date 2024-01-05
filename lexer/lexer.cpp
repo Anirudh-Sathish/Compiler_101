@@ -4,6 +4,7 @@
 #include<string>
 #include<vector>
 #include<regex>
+#include<sstream>
 #include "../lexer/token.h"
 
 
@@ -38,33 +39,34 @@ class Lexer
                 throw;
             }
         }
-        std::vector<Token> tokenize(std::string content)
+        std::vector<Token> tokenize(std::vector<std::pair<int, std::string>> content)
         {
             std::vector<Token> tokens;
+            int token_position = 0;
             std::vector<std::pair<std::string , std::string>> patterns ={
                 {"DATA TYPE","(int|float)"},
-                {"IDENTIFIER","[a-zA-Z][a-zA-Z0-9]"},
+                {"IDENTIFIER","[a-zA-Z][a-zA-Z0-9]*"},
                 {"NUMBER","\\d+"},
                 {"OPERATOR", "[+\\-*/=]"}
             };
-            std::string combinedPattern;
-            for(auto &pattern : patterns)
+            for(auto &line: content)
             {
-                combinedPattern += "("+pattern.second+")|";
-            }
-            combinedPattern.pop_back();
-            std::regex token_regex(combinedPattern);
-            auto words_begin = std::sregex_iterator(content.begin(),content.end(),token_regex);
-            auto words_end = std::sregex_iterator();
-            for (std:: sregex_iterator it = words_begin; it != words_end ; ++it)
-            {
-                for (size_t i = 1; i < it->size(); ++i)
-                {
-                    std::cout<<it->str(i)<<" ";
-                    if (!it->str(i).empty())
+                std::stringstream ss(line.second);
+                std::vector<std::string> words;
+                std::string word;
+                while (std::getline(ss, word, ' ') || std::getline(ss, word, '\n')) {
+                    words.push_back(word);
+                    for(const auto &pattern: patterns)
                     {
-                        std::cout<<patterns[i-1].first<<std::endl;
-                        tokens.push_back({patterns[i - 1].first, it->str(i), it->position(i)});
+                        std::regex regexPattern(pattern.second);
+                        if(std::regex_search(word,regexPattern))
+                        {
+                            std::cout<<word<<" "<<pattern.first<<std::endl;
+                            Token new_token = {pattern.first,word,token_position+1};
+                            token_position++;
+                            tokens.push_back(new_token);
+                            break;
+                        }
                     }
                 }
             }
@@ -85,6 +87,13 @@ int main(int argc, char* argv[])
     for(auto &line: content)
     {
         std::cout<<line.first<<" "<<line.second<<std::endl;
+    }
+    std::vector<Token> tokens = lexer.tokenize(content);
+    std::string equalsLine(40, '=');
+    for(auto &token: tokens)
+    {
+        std::cout<<"Type : "<<token.type<<"\nValue : "<<token.value<<"\nPosition : "<<token.position<<std::endl;
+        std::cout<<equalsLine<<std::endl;
     }
 
 }
