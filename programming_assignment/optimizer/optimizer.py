@@ -1,19 +1,23 @@
 # optimizer file 
 import re
 
-def get_succesors(cfg):
-    block_succesor = {}
-    for block in cfg:
-        succesors = []
-        for line in cfg[block]:
+def get_graph(blocks):
+    adjacency_list = {}
+    for block in blocks:
+        nghbrs = {}
+        for line in blocks[block]:
             contains_goto, target = find_goto_with_number(line)
             if contains_goto:
-                succesor = find_block(target,cfg)
-                succesors.append(str(succesor))
-        if block < len(cfg):
-            succesors.append(str(block+1))
-        block_succesor[block] = succesors
-    return block_succesor
+                block_num = find_block(target,blocks)
+                nghbrs[block_num] = blocks[block_num]
+        if block < len(blocks)-1:
+            nghbrs[block+1] = (blocks[block+1])
+        adjacency_list[block] = nghbrs
+    return adjacency_list
+
+def add_terminals(blocks):
+    blocks[0] = "ENTRY"
+    blocks[len(blocks)] = "EXIT"
 
 def find_block(target,cfg):
     num = 1
@@ -24,7 +28,7 @@ def find_block(target,cfg):
             num+=1
     return -1
         
-def get_cfg(lines):
+def get_blocks(lines):
     leaders = get_leaders(lines)
     blocks = {}
     block_counter = 1

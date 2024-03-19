@@ -16,20 +16,19 @@ class UtilProcessor:
     def process_text_to_lines(self):
         lines = self.__assign_line_number__(self.__read_text_to_lines__())
         return lines
-def view_cfg_as_dot(cfg,succesors):
+
+def view_adj_as_dot(adj,blocks):
     dot = Digraph()
-    dot.node('0','ENTRY')
     edges = []
-    for block in cfg:
-        if block ==1:
-            edges.append(str(block-1)+str(block))
-        block_content = ''.join(cfg[block])
+    for block in adj:
+        block_content = ''.join(blocks[block])
         dot.node(str(block),block_content)
-        for n in succesors[block]:
-            edge = str(block)+n
+        for ngbr in adj[block]:
+            ngbr_content = ''.join(adj[block][ngbr])
+            dot.node(str(ngbr),ngbr_content)
+            edge = str(block)+str(ngbr)
             edges.append(edge)
-    dot.node(str(len(cfg)+1),"EXIT")
-    edges.append(str(len(cfg))+str(len(cfg)+1))
-    dot.edges(edges)
+    final_edges = list(set(edges))
+    dot.edges(final_edges)
     dot.render('graph', format='png', cleanup=True)
     dot.view()

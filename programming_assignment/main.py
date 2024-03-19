@@ -7,9 +7,11 @@ def main():
     lines = text_processor.process_text_to_lines()
     for line_no in  lines:
         print(line_no,lines[line_no])
-    cfg = optimizer.get_cfg(lines)
-    succesors = optimizer.get_succesors(cfg)
-    utils.view_cfg_as_dot(cfg,succesors)
+    blocks = optimizer.get_blocks(lines)
+    optimizer.add_terminals(blocks)
+    adj_list = optimizer.get_graph(blocks)
+    utils.view_adj_as_dot(adj_list,blocks)
+    # utils.view_cfg_as_dot(adj_list)
     
 
 
