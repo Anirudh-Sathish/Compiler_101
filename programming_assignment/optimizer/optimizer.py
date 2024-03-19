@@ -1,6 +1,38 @@
 # optimizer file 
 import re
 
+def get_dominance_relation(adj_list,blocks):
+    dom = {key: list(range(1, len(blocks)-1)) for key in range(1, len(blocks)-1)}
+    for block_num in blocks:
+        if (block_num == 0) or (block_num == len(blocks)-1):
+            continue
+        if block_num == 1:
+            dom[block_num] = [1]
+            continue
+        else:
+            predecessors = find_predecessors(block_num,adj_list)
+            predecessors_contribution = set()
+            for node_num in predecessors:
+                if len(predecessors_contribution) == 0:
+                    for item in dom[node_num]:
+                        predecessors_contribution.add(item)
+                    continue
+                current_set = set()
+                for item in dom[node_num]:
+                    current_set.add(item)
+                predecessors_contribution.intersection(current_set)
+        prev_set = {block_num}
+        dom[block_num] = list(prev_set.union(predecessors_contribution))
+    return dom
+
+def find_predecessors(block_num,adj_list):
+    pred_set = set()
+    for node in adj_list:
+        for nbr in adj_list[node]:
+            if nbr == block_num:
+                pred_set.add(node)
+    return list(pred_set)
+
 def get_graph(blocks):
     adjacency_list = {}
     for block in blocks:

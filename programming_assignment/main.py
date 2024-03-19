@@ -11,9 +11,10 @@ def main(path):
     blocks = optimizer.get_blocks(lines)
     optimizer.add_terminals(blocks)
     adj_list = optimizer.get_graph(blocks)
+    dom_relation = optimizer.get_dominance_relation(adj_list,blocks)
     utils.view_adj_as_dot(adj_list,blocks)
+    utils.view_dominator_tree(dom_relation,blocks)
     
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Process text and optimize blocks")
