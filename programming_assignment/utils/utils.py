@@ -48,7 +48,7 @@ def view_dominator_tree(dom_relation,blocks):
             edges.append(edge)
     final_edges = list(set(edges))
     dot.edges(final_edges)
-    dot.render('dominator_tree', format='png', cleanup=True)
+    dot.render('sample_outputs/dominator_tree', format='png', cleanup=True)
     dot.view()
 
 def view_adj_as_dot(adj,blocks):
@@ -71,7 +71,7 @@ def view_adj_as_dot(adj,blocks):
             edges.append(edge)
     final_edges = list(set(edges))
     dot.edges(final_edges)
-    dot.render('cfg', format='png', cleanup=True)
+    dot.render('sample_outputs/cfg', format='png', cleanup=True)
     dot.view()
 
 
