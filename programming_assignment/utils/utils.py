@@ -25,31 +25,6 @@ class UtilProcessor:
         lines = self.__assign_line_number__(self.__read_text_to_lines__())
         return lines
 
-def view_dominator_tree(dom_relation,blocks):
-    """Gives dot representation of dominator tree given the domination relation and
-    the blocks
-
-    :param dom_relation: domination relation of the blocks
-    :type dom_relation: dict
-    :param blocks: blocks of the cfg
-    :type blocks: dict
-    """
-    dot = Digraph()
-    edges = []
-    for block_num in dom_relation:
-        if block_num ==1:
-            block_content = ''.join(blocks[block_num])
-            dot.node(str(block_num),block_content)
-        else:
-            block_content = ''.join(blocks[block_num])
-            dot.node(str(block_num),block_content)
-            second_max = find_second_maximum(dom_relation[block_num])
-            edge = str(second_max)+str(block_num)
-            edges.append(edge)
-    final_edges = list(set(edges))
-    dot.edges(final_edges)
-    dot.render('sample_outputs/dominator_tree', format='png', cleanup=True)
-    dot.view()
 
 def view_adj_as_dot(adj,blocks):
     """Gives the dot representation of the cfg
