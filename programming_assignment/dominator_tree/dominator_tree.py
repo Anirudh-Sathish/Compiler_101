@@ -3,7 +3,7 @@ from utils import utils
 from graphviz import Digraph
 
 class DominatorTreeNode:
-    def __init__(self,block_data,block_name):
+    def __init__(self,block_data = None, block_name = None):
         self.name = block_name
         self.data = block_data
         self.children = []
@@ -15,15 +15,19 @@ class DominatorTree:
         self.dom_relation = dom_relation
         self.blocks = blocks
         self.dom_nodes = {}
+        self.root = DominatorTreeNode()
     def __create_dominator_nodes__(self,):
         for block_num in self.dom_relation:
             self.dom_nodes[block_num] = DominatorTreeNode(self.blocks[block_num],block_num)
     def create_dominator_tree(self):
         self.__create_dominator_nodes__()
         for block_num, doms in self.dom_relation.items():
+            if block_num == 1:
+                self.root = self.dom_nodes[block_num]
             if block_num != 1:
                 second_max = utils.find_second_maximum(doms)
-                self.dom_nodes[second_max].add_child(self.dom_nodes[block_num])        
+                self.dom_nodes[second_max].add_child(self.dom_nodes[block_num])
+        return self.root 
     def traverse_dominator_tree(self):
         visited = set()
         def dfs(node):
@@ -33,7 +37,7 @@ class DominatorTree:
             print("Node:", node.name, "Data:", node.data)
             for child in node.children:
                 dfs(child)
-        dfs(self.dom_nodes[1])
+        dfs(self.root)
 
     def view_dominator_tree(self):
         dot = Digraph()
@@ -50,8 +54,7 @@ class DominatorTree:
                 edge = str(node.name) + str(child.name)
                 edges.append(edge)
                 dfs(child)
-
-        dfs(self.dom_nodes[1])
+        dfs(self.root)
         final_edges = list(set(edges))
         dot.edges(final_edges)
         dot.render('sample_outputs/dominator_tree', format='png', cleanup=True)

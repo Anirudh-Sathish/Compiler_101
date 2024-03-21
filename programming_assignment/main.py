@@ -2,6 +2,7 @@
 import argparse
 from utils import utils
 from optimizer import optimizer
+from dominator_tree import dominator_tree
 
 def main(path):
     text_processor = utils.UtilProcessor(path)
@@ -12,8 +13,11 @@ def main(path):
     optimizer.add_terminals(blocks)
     adj_list = optimizer.get_graph(blocks)
     dom_relation = optimizer.get_dominance_relation(adj_list,blocks)
+    dom_tree = dominator_tree.DominatorTree(dom_relation,blocks)
+    dominator_root = dom_tree.create_dominator_tree()
+    dom_tree.traverse_dominator_tree()
+    dom_tree.view_dominator_tree()
     utils.view_adj_as_dot(adj_list,blocks)
-    utils.view_dominator_tree(dom_relation,blocks)
     
 
 if __name__ == '__main__':
