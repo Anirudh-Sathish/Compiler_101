@@ -1,0 +1,97 @@
+digraph {
+	1 [label="i1 = 1
+"]
+	2 [label="i2 = φ (i1,i3)
+t21 = φ (t20,t23)
+j1 = 1
+"]
+	2 [label="i2 = φ (i1,i3)
+t21 = φ (t20,t23)
+j1 = 1
+"]
+	3 [label="t22 = φ (t21,t23)
+t11 = 10 * i2
+t23 = t11 + 1
+t31 = 8 * t23
+t41 = t31 - 88
+a[t4] = 0.0
+j2 = j1 + 1
+if j2 <= 10 goto (3_BLOCK)
+
+"]
+	3 [label="t22 = φ (t21,t23)
+t11 = 10 * i2
+t23 = t11 + 1
+t31 = 8 * t23
+t41 = t31 - 88
+a[t4] = 0.0
+j2 = j1 + 1
+if j2 <= 10 goto (3_BLOCK)
+
+"]
+	3 [label="t22 = φ (t21,t23)
+t11 = 10 * i2
+t23 = t11 + 1
+t31 = 8 * t23
+t41 = t31 - 88
+a[t4] = 0.0
+j2 = j1 + 1
+if j2 <= 10 goto (3_BLOCK)
+
+"]
+	4 [label="i3 = i2 + 1
+if i3 <= 10 goto (2_BLOCK)
+
+"]
+	4 [label="i3 = i2 + 1
+if i3 <= 10 goto (2_BLOCK)
+
+"]
+	2 [label="i2 = φ (i1,i3)
+t21 = φ (t20,t23)
+j1 = 1
+"]
+	5 [label="i4 = 1
+"]
+	5 [label="i4 = 1
+"]
+	6 [label="a1 = φ (a0,a1)
+t51 = i4 - 1
+t61 = 88 * t51
+a[t6] = 1.0
+i5 = i4 + 1
+if i5 <= 10 goto (6_BLOCK) 
+
+"]
+	6 [label="a1 = φ (a0,a1)
+t51 = i4 - 1
+t61 = 88 * t51
+a[t6] = 1.0
+i5 = i4 + 1
+if i5 <= 10 goto (6_BLOCK) 
+
+"]
+	6 [label="a1 = φ (a0,a1)
+t51 = i4 - 1
+t61 = 88 * t51
+a[t6] = 1.0
+i5 = i4 + 1
+if i5 <= 10 goto (6_BLOCK) 
+
+"]
+	7 [label=EXIT]
+	0 [label=ENTRY]
+	1 [label="i1 = 1
+"]
+	7 [label=EXIT]
+	1 -> 2
+	4 -> 2
+	6 -> 7
+	3 -> 4
+	5 -> 6
+	4 -> 5
+	0 -> 1
+	3 -> 3
+	6 -> 6
+	2 -> 3
+}
