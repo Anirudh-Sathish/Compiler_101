@@ -33,7 +33,6 @@ class SSA_Converter:
     def convert_cfg_ssa(self):
         variables, block_variables = self.get_variables_in_block()
         self.__insert_phi__(variables,block_variables)
-
         count = {}
         stack = {}
         visited = set()
@@ -59,18 +58,18 @@ class SSA_Converter:
                             original_var_index = stack[stmt_var][-1]
                             new_var = stmt_var + str(original_var_index)
                             if stmt_type.value == 1:
-                                self.blocks[block_num][i] = re.sub(r'\b' + re.escape(stmt_var) + r'\b', new_var, stmt)
+                                self.blocks[block_num][i] = re.sub(r'\b' + re.escape(stmt_var) + r'\b', new_var, stmt)+"\n"
                             else:
-                                self.blocks[block_num][i] = defn + " = " + rest_part.replace(stmt_var, new_var, 1)
+                                self.blocks[block_num][i] = defn + " = " + rest_part.replace(stmt_var, new_var, 1)+"\n"
             if stmt_type.value ==2:
                 for block_variable in variables:
-                    defn, rest_part = [part.strip() for part in stmt.split("=", 1)]
+                    defn, rest_part = [part.strip() for part in self.blocks[block_num][i].split("=", 1)]
                     if block_variable == defn:
                         count[defn]+=1
                         var_index = count[defn]
                         stack[defn].append(var_index)
                         new_defn = defn + str(var_index)
-                        self.blocks[block_num][i] = new_defn + " = " + rest_part
+                        self.blocks[block_num][i] = new_defn + " = " + rest_part+"\n"
         for next_block in self.adj_list[block_num]:
             if next_block == (len(self.blocks)-1):
                 break
