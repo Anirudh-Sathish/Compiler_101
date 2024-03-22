@@ -1,4 +1,36 @@
 import re
+from dominator_tree import dominator_tree
+from utils import utils
+
+def compute_dominance_frontier(root,idom,adj_list,df,dom_relation):
+    s = set()
+    for y in adj_list[root.name]:
+        if y in idom:
+            if idom[y] != root.name:
+                s.update({y})
+    for child  in root.children:
+        if child is None:
+            break
+        _ = compute_dominance_frontier(child,idom,adj_list,df,dom_relation)
+        for member in df[child.name]:
+           # if root does not dominate memeber
+            if check_domination(member,root.name,dom_relation) is False:
+                s.update({member})
+    df[root.name] = s
+    return df
+def check_domination(member, dominator,dom_relation):
+    if dominator in dom_relation[member]:
+        return True
+    return False
+def get_idom(dominance_realtion):
+    idom = {}
+    for block_num,dom in dominance_realtion.items():
+        if block_num == 1:
+            idom[block_num] = block_num
+        else:
+            second_max = utils.find_second_maximum(dom)
+            idom[block_num] = second_max
+    return idom
 
 def get_dominance_relation(adj_list,blocks):
     """Obtains dominance relation of given blocks in CFG
@@ -61,10 +93,12 @@ def get_graph(blocks):
     adjacency_list = {}
     for block in blocks:
         nghbrs = {}
-        for line in blocks[block]:
+        for line_index, line in enumerate(blocks[block]):
             contains_goto, target = find_goto_with_number(line)
             if contains_goto:
                 block_num = find_block(target,blocks)
+                replacement_string = str(block_num)+"_BLOCK"
+                blocks[block][line_index]  = line.replace(str(target),replacement_string)
                 nghbrs[block_num] = blocks[block_num]
         if block < len(blocks)-1:
             nghbrs[block+1] = (blocks[block+1])

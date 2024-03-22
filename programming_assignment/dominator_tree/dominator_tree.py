@@ -11,23 +11,22 @@ class DominatorTreeNode:
         self.children.append(child_node)
 
 class DominatorTree:
-    def __init__(self,dom_relation,blocks):
-        self.dom_relation = dom_relation
+    def __init__(self,blocks,idom):
         self.blocks = blocks
+        self.idom = idom
         self.dom_nodes = {}
         self.root = DominatorTreeNode()
     def __create_dominator_nodes__(self,):
-        for block_num in self.dom_relation:
+        for block_num in self.idom:
             self.dom_nodes[block_num] = DominatorTreeNode(self.blocks[block_num],block_num)
     def create_dominator_tree(self):
         self.__create_dominator_nodes__()
-        for block_num, doms in self.dom_relation.items():
+        for block_num, dom in self.idom.items():
             if block_num == 1:
                 self.root = self.dom_nodes[block_num]
             if block_num != 1:
-                second_max = utils.find_second_maximum(doms)
-                self.dom_nodes[second_max].add_child(self.dom_nodes[block_num])
-        return self.root 
+                self.dom_nodes[dom].add_child(self.dom_nodes[block_num])
+        return self.root
     def traverse_dominator_tree(self):
         visited = set()
         def dfs(node):
@@ -59,6 +58,7 @@ class DominatorTree:
         dot.edges(final_edges)
         dot.render('sample_outputs/dominator_tree', format='png', cleanup=True)
         dot.view()
+
 
 
 

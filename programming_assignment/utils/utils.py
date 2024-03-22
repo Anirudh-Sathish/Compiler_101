@@ -1,5 +1,6 @@
 # Utils file
 from graphviz import Digraph
+import re
 
 class UtilProcessor:
     """
@@ -26,7 +27,7 @@ class UtilProcessor:
         return lines
 
 
-def view_adj_as_dot(adj,blocks):
+def view_adj_as_dot(adj,blocks,loc):
     """Gives the dot representation of the cfg
 
     :param adj: Adjacency list representation of the CFG
@@ -40,13 +41,13 @@ def view_adj_as_dot(adj,blocks):
         block_content = ''.join(blocks[block])
         dot.node(str(block),block_content)
         for ngbr in adj[block]:
-            ngbr_content = ''.join(adj[block][ngbr])
+            ngbr_content = ''.join(blocks[ngbr])
             dot.node(str(ngbr),ngbr_content)
             edge = str(block)+str(ngbr)
             edges.append(edge)
     final_edges = list(set(edges))
     dot.edges(final_edges)
-    dot.render('sample_outputs/cfg', format='png', cleanup=True)
+    dot.render(f'sample_outputs/{loc}', format='png', cleanup=True)
     dot.view()
 
 
@@ -62,3 +63,13 @@ def find_second_maximum(lst):
         return "List should have at least two elements"
     sorted_list = sorted(lst, reverse=True)
     return sorted_list[1]
+
+def remove_keywords(lst):
+    forbidden_keywords = ["if", "goto", "je", "jmp"]
+    return [elem for elem in lst if not any(keyword in elem.lower() for keyword in forbidden_keywords)]
+
+def extract_variables(line):
+    variable_pattern = r'\b[a-zA-Z_][a-zA-Z0-9_]*\b'
+    variables = re.findall(variable_pattern, line)
+    variables = remove_keywords(variables)
+    return list(set(variables))

@@ -3,23 +3,32 @@ import argparse
 from utils import utils
 from optimizer import optimizer
 from dominator_tree import dominator_tree
+from ssa_converter import ssa_converter
 
 def main(path):
     text_processor = utils.UtilProcessor(path)
     lines = text_processor.process_text_to_lines()
-    for line_no in  lines:
-        print(line_no,lines[line_no])
+    # for line_no in  lines:
+    #     print(line_no,lines[line_no])
     blocks = optimizer.get_blocks(lines)
     optimizer.add_terminals(blocks)
     adj_list = optimizer.get_graph(blocks)
     dom_relation = optimizer.get_dominance_relation(adj_list,blocks)
-    dom_tree = dominator_tree.DominatorTree(dom_relation,blocks)
+    idom = optimizer.get_idom(dom_relation)
+    dom_tree = dominator_tree.DominatorTree(blocks,idom)
     dominator_root = dom_tree.create_dominator_tree()
-    dom_tree.traverse_dominator_tree()
-    dom_tree.view_dominator_tree()
-    utils.view_adj_as_dot(adj_list,blocks)
-    
+    # dom_tree.view_dominator_tree()
+    utils.view_adj_as_dot(adj_list,blocks,"cfg")
+    dom_front = {}
+    df = optimizer.compute_dominance_frontier(dominator_root,idom,adj_list,dom_front,dom_relation)
+    ssa_convert = ssa_converter.SSA_Converter(adj_list,blocks,df)
+    updated_blocks = ssa_convert.convert_cfg_ssa()
+    updated_adj_list = optimizer.get_graph(blocks)
+    utils.view_adj_as_dot(adj_list,updated_blocks,"ssa")
 
+    
+    
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Process text and optimize blocks")
     parser.add_argument("path", type=str, help="Path to the text file")
