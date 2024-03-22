@@ -19,7 +19,7 @@ def main(path):
     utils.view_adj_as_dot(adj_list,blocks,"cfg")
     dom_front = {}
     df = optimizer.compute_dominance_frontier(dominator_root,idom,adj_list,dom_front,dom_relation)
-    ssa_convert = ssa_converter.SSA_Converter(adj_list,blocks,df)
+    ssa_convert = ssa_converter.SSAconverter(adj_list,blocks,df)
     updated_blocks = ssa_convert.convert_cfg_ssa()
     utils.view_adj_as_dot(adj_list,updated_blocks,"ssa")
  

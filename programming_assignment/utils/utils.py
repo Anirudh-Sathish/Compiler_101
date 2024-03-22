@@ -65,10 +65,24 @@ def find_second_maximum(lst):
     return sorted_list[1]
 
 def remove_keywords(lst):
+    """Removes keywords from a list
+
+    :param lst: list containing tokens
+    :type lst: list
+    :return: list after removal of keywords
+    :rtype: list
+    """
     forbidden_keywords = ["if", "goto", "je", "jmp"]
     return [elem for elem in lst if not any(keyword in elem.lower() for keyword in forbidden_keywords)]
 
 def extract_variables(line):
+    """ Extracts variables present in a line
+
+    :param line: string containing variables, keywords, symbols
+    :type line: str
+    :return: list containing variables
+    :rtype: list
+    """
     variable_pattern = r'\b[a-zA-Z_][a-zA-Z0-9_]*\b'
     variables = re.findall(variable_pattern, line)
     variables = remove_keywords(variables)

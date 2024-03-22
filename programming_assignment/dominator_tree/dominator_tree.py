@@ -3,24 +3,38 @@ from utils import utils
 from graphviz import Digraph
 
 class DominatorTreeNode:
+    """
+    Node structure of the dominator tree
+    """
     def __init__(self,block_data = None, block_name = None):
         self.name = block_name
         self.data = block_data
         self.children = []
     def add_child(self,child_node):
+        """Adds childern to the node
+
+        :param child_node: child to be added
+        :type child_node: DominatorTreeNode
+        """
         self.children.append(child_node)
 
 class DominatorTree:
+    """
+    Dominator Tree Class
+    """
     def __init__(self,blocks,idom):
         self.blocks = blocks
         self.idom = idom
         self.dom_nodes = {}
         self.root = DominatorTreeNode()
-    def __create_dominator_nodes__(self,):
         for block_num in self.idom:
             self.dom_nodes[block_num] = DominatorTreeNode(self.blocks[block_num],block_num)
     def create_dominator_tree(self):
-        self.__create_dominator_nodes__()
+        """ Traverses blocks of CFG to create dominator tree
+
+        :return: root of dominator tree
+        :rtype: DominatorTreeNode
+        """
         for block_num, dom in self.idom.items():
             if block_num == 1:
                 self.root = self.dom_nodes[block_num]
@@ -28,6 +42,9 @@ class DominatorTree:
                 self.dom_nodes[dom].add_child(self.dom_nodes[block_num])
         return self.root
     def traverse_dominator_tree(self):
+        """
+        Traverses the dominator tree
+        """
         visited = set()
         def dfs(node):
             if node is None or node.name in visited:
@@ -37,8 +54,10 @@ class DominatorTree:
             for child in node.children:
                 dfs(child)
         dfs(self.root)
-
     def view_dominator_tree(self):
+        """
+        Obtains dot representation of dominator tree 
+        """
         dot = Digraph()
         visited = set()
         edges = []

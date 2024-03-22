@@ -1,8 +1,23 @@
 import re
-from dominator_tree import dominator_tree
 from utils import utils
 
 def compute_dominance_frontier(root,idom,adj_list,df,dom_relation):
+    """ Recursively computes the dominance frontier for a given 
+    root node in a control flow graph.
+
+    :param root: Root of the dominator tree
+    :type root: DominatorTreeNode
+    :param idom: dictionary containing immediate dominator of each block
+    :type idom: dict
+    :param adj_list: Adjacency list representation of CFG
+    :type adj_list: dict
+    :param df: Dominance frontier of the blocks
+    :type df: dict
+    :param dominance_realtion: dictinoary containing dominance relation between various blocks
+    :type dominance_realtion: dict
+    :return: dominance frontier of the blocks
+    :rtype: dict
+    """
     s = set()
     for y in adj_list[root.name]:
         if y in idom:
@@ -19,10 +34,29 @@ def compute_dominance_frontier(root,idom,adj_list,df,dom_relation):
     df[root.name] = s
     return df
 def check_domination(member, dominator,dom_relation):
+    """
+    Checks for a domination relation between a member and suggested dominator
+
+    :param member: Node of the Dominator Tree to be checked for domination
+    :type member: DominatorTreeNode
+    :param dominator: Possible dominator node
+    :type dominator: DominatorTreeNode
+    :param dominance_realtion: dictinoary containing dominance relation between various blocks
+    :type dominance_realtion: dict
+    :return: _description_
+    :rtype: _type_
+    """
     if dominator in dom_relation[member]:
         return True
     return False
 def get_idom(dominance_realtion):
+    """Get immediate domiantors for a dominance relation
+
+    :param dominance_realtion: dictinoary containing dominance relation between various blocks
+    :type dominance_realtion: dict
+    :return: dictionary containing immediate dominator of each block
+    :rtype: dict
+    """
     idom = {}
     for block_num,dom in dominance_realtion.items():
         if block_num == 1:
