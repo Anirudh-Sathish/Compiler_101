@@ -116,7 +116,6 @@ namespace
 				IRBuilder<> builder(&firstInst); 
                 Value *oneValue = ConstantInt::get(intType, count);
 				builder.CreateStore(oneValue, global);
-				BB.print(errs(), nullptr);
 				count++;
 			}
 		}
@@ -156,8 +155,8 @@ namespace
 							if (previousOperand)
 							{
 								auto *constInt = dyn_cast<ConstantInt>(previousOperand);
-								int intValue = constInt->getSExtValue(); // Use getSExtValue for signed integers
-								countValue = ConstantInt::get(intType, count); // Initialize to 0
+								int intValue = constInt->getSExtValue(); 
+								countValue = ConstantInt::get(intType, count);
 								intValueValue = ConstantInt::get(intType, intValue);								
 								flag = 1;
 							}
@@ -165,7 +164,6 @@ namespace
 						previousOperand = V;
                		}
 				}
-				BB.print(errs(), nullptr);
 				count++;
 			}
 		}
