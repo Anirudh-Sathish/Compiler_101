@@ -86,7 +86,105 @@ namespace
                << " (" << max << " successors)\n";
     }
   }
+  
+	struct MyPass : public PassInfoMixin<MyPass>
+	{
+	void view_global_variables(Module &M)
+	{
+		for(auto global = M.global_begin(); global !=  M.global_end();global++)
+		{
+			GlobalVariable *GV = &(*global);
+			errs()<<GV->getName()<<"\n";
+		}
+	}
+  	void add_global_variable(Module &M,std::string name,Type *ty, Constant *value)
+	{
+        GlobalVariable *globalVar = new GlobalVariable(
+        M, ty, false, GlobalValue::ExternalLinkage,
+        value, name);
+    }
+	void first_g_variation(Module &M,Type *intType )
+	{
+		int count;
+		for(auto &F: M)
+		{
+			GlobalVariable *global = M.getNamedGlobal("G");
+			count = 0;
+			for(auto &BB: F)
+			{
+				Instruction &firstInst = *BB.getFirstNonPHI();
+				IRBuilder<> builder(&firstInst); 
+                Value *oneValue = ConstantInt::get(intType, count);
+				builder.CreateStore(oneValue, global);
+				BB.print(errs(), nullptr);
+				count++;
+			}
+		}
+	}
+	void g_xor(Module &M,Type *intType)
+	{
+		int count;
+		int flag =0;
+		Value *countValue;
+		Value *intValueValue;
+		for(auto &F:M)
+		{
+			count= 0;
+			GlobalVariable *global = M.getNamedGlobal("G");
+			for(auto &BB: F)
+			{
+				if(BB.getName() == "entry")
+				{
+					count++;
+					continue;
+				}
+				for(auto &I: BB)
+				{
+					Value *previousOperand = nullptr;
+					if(flag ==1)
+					{
+						IRBuilder<> builder(&I);
+						Value* xorResult = builder.CreateXor(countValue, intValueValue, "xorResult");
+						builder.CreateStore(xorResult, global);
+						flag = 0;
+					}
+					for (Use &U : I.operands())
+					{
+						Value *V = U.get();
+						if(V == global)
+						{
+							if (previousOperand)
+							{
+								auto *constInt = dyn_cast<ConstantInt>(previousOperand);
+								int intValue = constInt->getSExtValue(); // Use getSExtValue for signed integers
+								countValue = ConstantInt::get(intType, count); // Initialize to 0
+								intValueValue = ConstantInt::get(intType, intValue);								
+								flag = 1;
+							}
+						}
+						previousOperand = V;
+               		}
+				}
+				BB.print(errs(), nullptr);
+				count++;
+			}
+		}
+	}
+  	PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM)
+  	{
+		LLVMContext &context = M.getContext();
+  		Type *intType = Type::getInt32Ty(context);
+    	Constant *initValue = ConstantInt::get(intType, 0);
+    	add_global_variable(M,"G",intType,initValue);
+		view_global_variables(M);
+		first_g_variation(M,intType);
+		
+		errs()<<"\n\n\n\n\n\n";
+		g_xor(M,intType);
 
+    	return PreservedAnalyses::none();
+  	}
+	};
   struct HelloWorld : PassInfoMixin<HelloWorld>
   {
     PreservedAnalyses run(Function &F, FunctionAnalysisManager &)
@@ -126,7 +224,27 @@ llvm::PassPluginLibraryInfo getHelloWorldPluginInfo()
 	};
 }
 
+llvm::PassPluginLibraryInfo updatedHelloWorldPluginInfo()
+{
+  	return {LLVM_PLUGIN_API_VERSION, "HelloWorld", LLVM_VERSION_STRING,[](PassBuilder &PB)
+	{
+        PB.registerPipelineParsingCallback(
+                [](StringRef Name, ModulePassManager &MPM,
+                   ArrayRef<PassBuilder::PipelineElement>)
+				{
+					if(Name == "my-pass")
+					{
+						MPM.addPass(MyPass());
+						return true;
+					}
+					return false;
+                }
+				);
+          	}
+	};
+}
+
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return getHelloWorldPluginInfo();
+  return updatedHelloWorldPluginInfo();
 }
