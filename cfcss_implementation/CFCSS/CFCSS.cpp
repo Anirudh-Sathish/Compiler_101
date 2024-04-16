@@ -108,14 +108,14 @@ namespace
 
 						// Call a function to check values of newGValue and count
 						Value *block_sign = ConstantInt::get(intType, count);
-						Value *Args[] = { newGValue,block_sign};
-						// builder.CreateCall(M.getFunction("error-checker"), Args);
+						std::vector<Value*> args = {newGValue, block_sign};
+						builder.CreateCall(M.getFunction("error_checker"), args);
 					}
 					count++;
 				}
 			}
 		}
-		void insert_after_store(BasicBlock *Pred, int value,GlobalVariable *global,LLVMContext &context)
+		void insert_after_call(BasicBlock *Pred, int value,GlobalVariable *global,LLVMContext &context)
 		{
 			Type *intType = Type::getInt32Ty(context);
 			int flag = 0;
@@ -126,10 +126,9 @@ namespace
 					IRBuilder<> builder(&I); 
 					Value *d_val = ConstantInt::get(intType, value);
 					builder.CreateStore(d_val, global);
-					// (*Pred).print(errs(), nullptr);
 					flag = 0;
 				}
-				if (StoreInst *SI = dyn_cast<StoreInst>(&I)) flag =1;
+				if (isa<CallInst>(&I)) flag =1;
 			}
 
 		}
@@ -143,12 +142,12 @@ namespace
 				if(itr ==0)
 				{
 					s_prev = blocksgn;
-					insert_after_store(Pred,0,global,context);
+					insert_after_call(Pred,0,global,context);
 				}
 				else
 				{
 					int D = s_prev ^blocksgn;
-					insert_after_store(Pred,D,global,context);
+					insert_after_call(Pred,D,global,context);
 				}
 				itr++;
 			}
@@ -181,6 +180,9 @@ namespace
 						Value *currentDValue = builder.CreateLoad(intType,global_d);
 						newGValue = builder.CreateXor(newGValue, currentDValue);
 						builder.CreateStore(newGValue, global_g);
+						Value *block_sign = ConstantInt::get(intType, sig[&BB]);
+						std::vector<Value*> args = {newGValue, block_sign};
+						builder.CreateCall(M.getFunction("error_checker"), args);
 					}
 					count++;
 				}
