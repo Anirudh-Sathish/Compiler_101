@@ -1,4 +1,4 @@
-/*Basic Hello World Pass to get information*/
+/*CFCSS Implementation*/
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
@@ -21,33 +21,13 @@ namespace
 
 	struct MyPass : public PassInfoMixin<MyPass>
 	{
-		void insert_error_functions(Module &M, LLVMContext &context)
+		void insert_printf(Module &M, LLVMContext &context)
 		{
-			FunctionType *printfFuncType = FunctionType::get(
+			FunctionType *printf_func_type = FunctionType::get(
         	IntegerType::getInt32Ty(context),
         	PointerType::getInt8Ty(context),
         	true);
-			FunctionCallee printfFunc = M.getOrInsertFunction("printf", printfFuncType);
-
-			// Create the error printing function
-			FunctionType *errorFuncType = FunctionType::get(
-				Type::getVoidTy(context),
-				{},
-				false
-			);
-			Function *errorFunc = Function::Create(
-				errorFuncType,
-				Function::ExternalLinkage,
-				"error",
-				M
-			);
-
-			BasicBlock *entryBlock = BasicBlock::Create(context, "entry", errorFunc);
-			IRBuilder<> builder(entryBlock);
-			Constant *printfFormatStr = builder.CreateGlobalStringPtr("Error Error \n");
-			Value *printfArgs[] = {printfFormatStr};
-			builder.CreateCall(M.getFunction("printf"), printfArgs);
-			builder.CreateRetVoid();
+			FunctionCallee printf_unc = M.getOrInsertFunction("printf", printf_func_type);
 		}
 		map<BasicBlock*,int> calculate_signature(Module &M)
 		{
@@ -85,6 +65,8 @@ namespace
 			int count = 1;
 			for(auto &F :M)
 			{
+				errs()<<F.getName()<<"\n";
+				if(F.getName() == "error_checker")continue;
 				for(auto &BB:F)
 				{
 					GlobalVariable *global = M.getNamedGlobal("G");
@@ -95,7 +77,6 @@ namespace
 						IRBuilder<> builder(&firstInst); 
 						Value *g_val = ConstantInt::get(intType, count);
 						builder.CreateStore(g_val, global);
-						// BB.print(errs(), nullptr);
 					}
 					else if (pred_count ==1)
 					{
@@ -127,6 +108,7 @@ namespace
 					Value *d_val = ConstantInt::get(intType, value);
 					builder.CreateStore(d_val, global);
 					flag = 0;
+					break;
 				}
 				if (isa<CallInst>(&I)) flag =1;
 			}
@@ -155,6 +137,7 @@ namespace
 		}
 		void fan_instruct_cfcss(Module &M, map<BasicBlock*,int> sig)
 		{
+			// insert D as global variable 
 			LLVMContext &context = M.getContext();
 			Type *intType = Type::getInt32Ty(context);
 			Constant *initValue = ConstantInt::get(intType, 0);
@@ -162,23 +145,27 @@ namespace
 			int count = 1;
 			for(auto &F :M)
 			{
+				if(F.getName() == "error_checker")continue;
 				for(auto &BB:F)
 				{
 					GlobalVariable *global_d = M.getNamedGlobal("D");
 					GlobalVariable *global_g = M.getNamedGlobal("G");
 					int pred_count = 0;
+					// find predecessor count
 					for (BasicBlock *Pred : predecessors(&BB))pred_count++;
 					int s_prev;
-					if(pred_count ==2){
+					// if more than or equal to 2 pred, then fan
+					if(pred_count >=2){
 						s_prev = addD(BB,global_d,context,sig);
 						int d = s_prev ^ sig[&BB];
 						Instruction &firstInst = *BB.getFirstNonPHI();
-						IRBuilder<> builder(&firstInst); 
+						IRBuilder<> builder(&firstInst);
 						Value *currentGValue = builder.CreateLoad(intType,global_g);
 						Value *newGValue = builder.CreateXor(currentGValue, ConstantInt::get(intType, d));
 						builder.CreateStore(newGValue, global_g);
 						Value *currentDValue = builder.CreateLoad(intType,global_d);
-						newGValue = builder.CreateXor(newGValue, currentDValue);
+						currentGValue = builder.CreateLoad(intType,global_g);
+						newGValue = builder.CreateXor(currentGValue, currentDValue);
 						builder.CreateStore(newGValue, global_g);
 						Value *block_sign = ConstantInt::get(intType, sig[&BB]);
 						std::vector<Value*> args = {newGValue, block_sign};
@@ -196,26 +183,20 @@ namespace
 
 			// Create IR builder
 			IRBuilder<> builder(entryBlock);
-
-			// Get function arguments
 			Value* a = errorCheckerFunc->arg_begin();
 			Value* b = std::next(errorCheckerFunc->arg_begin());
-
 			// Compare a != b
 			Value* cmp = builder.CreateICmpNE(a, b, "cmp");
-
 			// Create if-else structure
 			BasicBlock* thenBlock = BasicBlock::Create(context, "then", errorCheckerFunc);
 			BasicBlock* endBlock = BasicBlock::Create(context, "end", errorCheckerFunc);
 			builder.CreateCondBr(cmp, thenBlock, endBlock);
-
 			// 'then' block: printf("illegal branch\n")
 			builder.SetInsertPoint(thenBlock);
 			Constant* format_str = builder.CreateGlobalStringPtr("illegal branch\n");
 			Value *printfArgs[] = {format_str};
 			builder.CreateCall(M.getFunction("printf"), printfArgs);
 			builder.CreateBr(endBlock);
-
 			// End block
 			builder.SetInsertPoint(endBlock);
 			builder.CreateRetVoid();
@@ -224,16 +205,8 @@ namespace
 		PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM)
 		{
 			LLVMContext &context = M.getContext();
-			insert_error_functions(M,context);
+			insert_printf(M,context);
 			create_checker_function(M,context);
-			// for(auto &F: M)
-			// {
-			// 	errs()<<F.getName()<<"\n";
-			// 	if(F.getName() == "error_checker")
-			// 	{
-			// 		F.print(errs());
-			// 	}
-			// }
 			map<BasicBlock*,int> sig = calculate_signature(M);
 			basic_instruct_cfcss(M);
 			fan_instruct_cfcss(M,sig);
@@ -244,9 +217,9 @@ namespace
 
 } 
 
-llvm::PassPluginLibraryInfo updatedHelloWorldPluginInfo()
+llvm::PassPluginLibraryInfo CFCSSPluginInfo()
 {
-  	return {LLVM_PLUGIN_API_VERSION, "HelloWorld", LLVM_VERSION_STRING,[](PassBuilder &PB)
+  	return {LLVM_PLUGIN_API_VERSION, "CFCSS", LLVM_VERSION_STRING,[](PassBuilder &PB)
 	{
         PB.registerPipelineParsingCallback(
                 [](StringRef Name, ModulePassManager &MPM,
@@ -266,5 +239,5 @@ llvm::PassPluginLibraryInfo updatedHelloWorldPluginInfo()
 
 extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo
 llvmGetPassPluginInfo() {
-  return updatedHelloWorldPluginInfo();
+  return CFCSSPluginInfo();
 }
