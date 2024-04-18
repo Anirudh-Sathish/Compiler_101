@@ -65,7 +65,6 @@ namespace
 			int count = 1;
 			for(auto &F :M)
 			{
-				errs()<<F.getName()<<"\n";
 				if(F.getName() == "error_checker")continue;
 				for(auto &BB:F)
 				{
@@ -202,6 +201,7 @@ namespace
 			builder.CreateRetVoid();
 
 		}
+		
 		PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM)
 		{
 			LLVMContext &context = M.getContext();

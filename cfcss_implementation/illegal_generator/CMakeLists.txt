@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(CFCSS_Implementation-CFCSS)
+project(CFCSS_Implementation-illegal_generator)
 
 
 set(LT_LLVM_INSTALL_DIR "" CACHE PATH "LLVM installation directory")
@@ -20,7 +20,7 @@ if(NOT LLVM_ENABLE_RTTI)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 endif()
 
-add_library(CFCSS SHARED CFCSS.cpp)
+add_library(illegal_generator SHARED illegal_generator.cpp)
 
-target_link_libraries(CFCSS
+target_link_libraries(illegal_generator
   "$<$<PLATFORM_ID:Darwin>:-undefined dynamic_lookup>")
