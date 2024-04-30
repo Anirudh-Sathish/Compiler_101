@@ -31,11 +31,11 @@ namespace
 				{
 					for(auto &I: BB)
 					{
-						if(auto *GEPInst = dynamic_cast<GetElementPtrInst>(&I))
+						if(GetElementPtrInst *GEPInst = dyn_cast<GetElementPtrInst>(&I))
 						{
-							if(GEPInst->getNumIndices>1)
+							if(GEPInst->getNumIndices()>1)
 							{
-								errs()<<"Is a struct \n";
+								errs()<<I<<"\n";
 							}
 						}
 					}
