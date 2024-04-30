@@ -25,6 +25,22 @@ namespace
 		PreservedAnalyses run(Module &M, ModuleAnalysisManager &MAM)
 		{
 			LLVMContext &context = M.getContext();
+			for(auto &F: M)
+			{
+				for(auto &BB: F)
+				{
+					for(auto &I: BB)
+					{
+						if(auto *GEPInst = dynamic_cast<GetElementPtrInst>(&I))
+						{
+							if(GEPInst->getNumIndices>1)
+							{
+								errs()<<"Is a struct \n";
+							}
+						}
+					}
+				}
+			}
 			return PreservedAnalyses::none();
 		}
 	};
