@@ -1,7 +1,5 @@
 /*FieldStatus Implementation*/
 #include "llvm/IR/LegacyPassManager.h"
-
-
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Support/raw_ostream.h"
@@ -16,7 +14,6 @@
 #include<map>
 #include <unordered_map>
 using namespace std;
-
 using namespace llvm;
 
 
@@ -28,7 +25,7 @@ namespace
 		std::unordered_map<StructType*, unsigned> StructFieldCounts;
 		void collectStructFieldCounts(Module &M, map<string,int>* fieldCountMap)
 		{
-			
+			// initalises the count of sturct fields
 			for(Type *type: M.getIdentifiedStructTypes())
 			{
 				if (StructType *structType = dyn_cast<StructType>(type))
@@ -44,42 +41,67 @@ namespace
 				}
 			}
     	}
-		void inspectGEP(Module &M, map<string,int>* fieldCountMap,GetElementPtrInst *GEP)
+		void incrementFieldCount(Module &M,BasicBlock &BB, map<string,int>* fieldCountMap, unsigned count)
 		{
-			Type *source_type = GEP->getSourceElementType();
-            Value *ptr_operand = GEP->getPointerOperand();
-			if(GetElementPtrInst *GEPInst = dyn_cast<GetElementPtrInst>(ptr_operand))
-			{
-				inspectGEP(M,fieldCountMap,GEPInst);
-			}
-			if (StructType *structType = dyn_cast<StructType>(source_type))
-			{
-				APInt ap_offset(64, 0, false);
-                GEP->accumulateConstantOffset(M.getDataLayout(), ap_offset);
-                int64_t offset_result = ap_offset.getSExtValue()/4;
-                string fieldName = structType->getName().str() +to_string(offset_result);
-                (*(fieldCountMap))[fieldName] +=1;
-			}
-			
-		}
-		void incrementFieldCount(Module &M,BasicBlock &BB, map<string,int>* fieldCountMap)
-		{
+			// increments the field count of Instructions in Basic Block
 			for(auto &I: BB)
 			{
 				if (GetElementPtrInst *GEP = dyn_cast<GetElementPtrInst>(&I))
 				{
-					errs()<<I<<"\n";
-					inspectGEP(M,fieldCountMap,GEP);
-					errs()<<"\n";
+					inspectGEP(M,fieldCountMap,GEP,count);
 				}
-				
 			}
 		}
-		void processFunction(Module &M, Function &F, map<string,int>* fieldCountMap)
+		void inspectGEP(Module &M, map<string,int>* fieldCountMap,GetElementPtrInst *GEP, unsigned count)
 		{
-			for(auto &BB: F)
+			// inspects GEP, and identifies struct type GEP, incrementing the field
+			// count of struct
+			Type *source_type = GEP->getSourceElementType();
+            Value *ptr_operand = GEP->getPointerOperand();
+			if(GetElementPtrInst *GEPInst = dyn_cast<GetElementPtrInst>(ptr_operand))
 			{
-				incrementFieldCount(M,BB,fieldCountMap);
+				inspectGEP(M,fieldCountMap,GEPInst,count);
+			}
+			if(AllocaInst *AllocI = dyn_cast<AllocaInst>(ptr_operand))
+			{
+				Type *allocated_type = AllocI->getAllocatedType();
+				if (StructType *structType = dyn_cast<StructType>(allocated_type))
+				{
+					APInt ap_offset(64, 0, false);
+					GEP->accumulateConstantOffset(M.getDataLayout(), ap_offset);
+					int64_t offset_result = ap_offset.getSExtValue()/4;
+					string fieldName = structType->getName().str() +to_string(offset_result);
+					(*(fieldCountMap))[fieldName] +=count;
+				}
+			}
+		}
+		unsigned computeLoopIterations(Loop *L, FunctionAnalysisManager &FAM, Function &F)
+		{
+			// computes the number of iterations of a given loop
+			ScalarEvolution &SE = FAM.getResult<ScalarEvolutionAnalysis>(F);
+			unsigned iterations = 1;
+			BasicBlock *exitingBlock = L->getExitingBlock();
+			unsigned TripCount = SE.getSmallConstantTripCount(L,exitingBlock);
+			if(TripCount)iterations = TripCount;
+			return iterations;
+		}
+		void processFunction(Module &M, Function &F, map<string,int>* fieldCountMap, FunctionAnalysisManager &FAM)
+		{
+			// identifies loops and increments the struct fields
+			LoopInfo &LI = FAM.getResult<LoopAnalysis>(F);
+			unsigned iterations;
+			for(Loop *L:LI)
+			{
+				iterations = computeLoopIterations(L,FAM,F);
+				for (BasicBlock *BB : L->getBlocks())
+				{
+					for(auto &I: *(BB))incrementFieldCount(M,*(BB),fieldCountMap,iterations);
+				}
+			}
+			for (BasicBlock &BB : F)
+			{
+				iterations = 1;
+				if (!LI.getLoopFor(&BB))incrementFieldCount(M, BB, fieldCountMap,iterations);
 			}
 		}
 	
@@ -88,14 +110,18 @@ namespace
 			LLVMContext &context = M.getContext();
 			map<string,int>fieldCountMap; 
 			collectStructFieldCounts(M,&fieldCountMap);
-			// getFieldCount(M,&fieldCountMap);
-			for(auto &F:M)
+			FunctionAnalysisManager &FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+			for(auto &F: M)
 			{
-				processFunction(M,F,&fieldCountMap);
+				if(F.isDeclaration())continue;
+				processFunction(M,F,&fieldCountMap,FAM);
 			}
 			for(auto field: fieldCountMap)
 			{
 				errs()<<"Field: "<<field.first<<"Count: "<<field.second<<"\n";
+				if(field.second == 0)errs()<<"Dead Field \n";
+				else if(field.second <= 5) errs()<<"Cold Field \n";
+				else errs()<<"Hot Field \n";	
 			}
 			return PreservedAnalyses::none();
 		}
